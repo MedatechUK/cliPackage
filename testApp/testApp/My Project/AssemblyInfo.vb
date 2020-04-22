@@ -8,17 +8,17 @@ Imports System.Runtime.InteropServices
 
 ' Review the values of the assembly attributes
 
-<Assembly: AssemblyTitle("MedatechUK.CLI")>
-<Assembly: AssemblyDescription("Command line inteprepter")>
-<Assembly: AssemblyCompany("MedatechUK")>
-<Assembly: AssemblyProduct("MedatechUK.CLI")>
+<Assembly: AssemblyTitle("testApp")>
+<Assembly: AssemblyDescription("")>
+<Assembly: AssemblyCompany("")>
+<Assembly: AssemblyProduct("testApp")>
 <Assembly: AssemblyCopyright("Copyright ©  2020")>
 <Assembly: AssemblyTrademark("")>
 
 <Assembly: ComVisible(False)>
 
 'The following GUID is for the ID of the typelib if this project is exposed to COM
-<Assembly: Guid("c909b52e-e116-4467-a327-4292856c21ef")>
+<Assembly: Guid("4c69be4c-c418-4fa8-ac6e-0766809cb317")>
 
 ' Version information for an assembly consists of the following four values:
 '

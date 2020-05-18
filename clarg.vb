@@ -137,6 +137,31 @@ Public Class clArg
 
 #End Region
 
+#Region "Console yes no"
+    Public Function YesNo(format As String, ParamArray args() As String) As Boolean
+        Console.Write(format, args)
+        Return _YesNo()
+    End Function
+
+    Public Function YesNo(format As String) As Boolean
+        Console.Write(format)
+        Return _YesNo()
+    End Function
+
+    Private Function _YesNo() As Boolean
+        Console.Write(" > ")
+        Dim k As ConsoleKeyInfo
+        Do Until Console.KeyAvailable
+            k = Console.ReadKey
+            Exit Do
+        Loop
+        Console.WriteLine("")
+        Return k.Key = ConsoleKey.Y
+
+    End Function
+
+#End Region
+
 #Region "Logging"
 
     Private Function LogFolder() As DirectoryInfo

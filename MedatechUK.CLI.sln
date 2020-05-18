@@ -5,8 +5,6 @@ VisualStudioVersion = 15.0.28307.1082
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "MedatechUK.CLI", "MedatechUK.CLI.vbproj", "{B7E43843-B380-43BB-B73D-C61E51BB84B0}"
 EndProject
-Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "testApp", "..\testApp\testApp\testApp.vbproj", "{8EF7DAD2-89E9-4272-A1A5-0C047A5F5C8E}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -17,10 +15,6 @@ Global
 		{B7E43843-B380-43BB-B73D-C61E51BB84B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B7E43843-B380-43BB-B73D-C61E51BB84B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B7E43843-B380-43BB-B73D-C61E51BB84B0}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8EF7DAD2-89E9-4272-A1A5-0C047A5F5C8E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8EF7DAD2-89E9-4272-A1A5-0C047A5F5C8E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8EF7DAD2-89E9-4272-A1A5-0C047A5F5C8E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8EF7DAD2-89E9-4272-A1A5-0C047A5F5C8E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

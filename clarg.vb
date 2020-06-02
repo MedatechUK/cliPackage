@@ -195,7 +195,7 @@ Public Class clArg
     End Function
 
     Public Sub Log(ByVal str, ByVal ParamArray args())
-        'Console.WriteLine("{0}> {1}", Format(Now, "HH:mm:ss"), String.Format(str, args))
+        Console.WriteLine(str, args)
         Using log As New StreamWriter(currentlog.FullName, True)
             log.WriteLine("{0}> {1}", Format(Now, "HH:mm:ss"), String.Format(str, args))
         End Using

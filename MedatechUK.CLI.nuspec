@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
   <metadata>
     <id>MedatechUK.CLI</id>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
     <authors>Simon Barnett</authors>
     <owners>Simon Barnett</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
@@ -11,7 +11,7 @@
     <icon>medatech.png</icon>
     <description>Command line tools.</description>
     <releaseNotes>Initial release.</releaseNotes>
-    <repository url="https://github.com/medatechuk/cliPackage" />
+    <repository type="git" url="https://github.com/medatechuk/cliPackage" />
 
   </metadata>
   <files>    

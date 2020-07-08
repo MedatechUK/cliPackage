@@ -124,12 +124,18 @@ Public Class clArg
 
         Catch ex As Exception
             Console.WriteLine()
-            Console.Write(
+            Try
+                Console.Write(
                 String.Format(
                     " {0} ",
                     New String("."c, Console.WindowWidth - (10))
                 )
             )
+
+            Catch ex2 As Exception
+
+            End Try
+
 
         End Try
 

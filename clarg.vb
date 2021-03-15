@@ -1,19 +1,19 @@
 ﻿Imports System.IO
-Imports System.Net.Mail
 Imports System.Reflection
-Imports System.Xml
-Imports System.Xml.Serialization
-Imports Newtonsoft.Json
+Imports MedatechUK.Logging
 
 Public Class clArg
-    Inherits Dictionary(Of String, String)
+    Inherits LogableDictionary
 
     Private Enum eMode
         Switch
         Param
+
     End Enum
 
-    Sub New()
+    Sub New(Optional LogEventHandler As EventHandler = Nothing)
+
+        If Not LogEventHandler Is Nothing Then Me.logHandler = LogEventHandler
 
         Dim Args = Environment.GetCommandLineArgs()
         Console.WriteLine("")
@@ -88,6 +88,8 @@ Public Class clArg
 
     End Sub
 
+#Region "Colourise"
+
     Sub Colourise(colour As ConsoleColor, str As String, ParamArray param() As String)
 
         Dim last As ConsoleColor = Console.ForegroundColor
@@ -110,6 +112,10 @@ Public Class clArg
         Console.ForegroundColor = last
 
     End Sub
+
+#End Region
+
+#Region "Line"
 
     Sub line(str As String, ParamArray param() As String)
 
@@ -170,91 +176,6 @@ Public Class clArg
 
     End Sub
 
-    Public Function Attempt(Sender As EventHandler, e As EventArgs, str As String, ParamArray param() As String) As Boolean
-        Try
-            line(str, param)
-            Sender.Invoke(Me, e)
-
-            Colourise(ConsoleColor.Green, "OK")
-            Console.WriteLine()
-            Return True
-
-        Catch ex As Exception
-            Log(ex.Message)
-            Colourise(ConsoleColor.Red, "FAIL")
-            Console.WriteLine()
-            Colourise(ConsoleColor.Red, ex.Message)
-            Console.WriteLine()
-            Return False
-
-        End Try
-
-    End Function
-
-#Region "Deserialisation"
-
-    Private ret As Object
-    Public Function Deserial(Inputfile As FileInfo, DeserialObject As Type, Optional SerialType As eSerialType = eSerialType.unspecified) As Object
-
-        ret = Nothing
-        Dim sucsess As Boolean = False
-
-        Select Case SerialType
-            Case eSerialType.unspecified
-                Select Case Inputfile.Extension.ToLower.Substring(1)
-                    Case "xml", "config"
-                        sucsess = Attempt(AddressOf xd, New serialArgs(Inputfile, DeserialObject), "Deserialising {0}", Inputfile.FullName)
-
-                    Case "json", "jsn", "jso"
-                        sucsess = Attempt(AddressOf jd, New serialArgs(Inputfile, DeserialObject), "Deserialising {0}", Inputfile.FullName)
-
-                    Case Else
-                        Throw New Exception(String.Format("Unknown deserial type {0}.", Inputfile.Extension.ToUpper))
-
-                End Select
-
-            Case eSerialType.json
-                sucsess = Attempt(AddressOf jd, New serialArgs(Inputfile, DeserialObject), "Deserialising {0}", Inputfile.FullName)
-
-            Case eSerialType.xml
-                sucsess = Attempt(AddressOf xd, New serialArgs(Inputfile, DeserialObject), "Deserialising {0}", Inputfile.FullName)
-
-        End Select
-
-        If sucsess Then
-            Return ret
-
-        Else
-            Throw New Exception("Deserialisation failed.")
-
-        End If
-
-    End Function
-
-    Private Sub xd(sender As Object, e As serialArgs)
-
-        If Not e.File.Exists Then _
-            Throw New Exception(String.Format("File {0} not found.", e.File.Name))
-
-        Dim s As New XmlSerializer(e.serialType)
-        Using sr As New StreamReader(e.File.FullName)
-            ret = s.Deserialize(sr)
-
-        End Using
-
-    End Sub
-
-    Private Sub jd(sender As Object, e As serialArgs)
-
-        If Not e.File.Exists Then _
-            Throw New Exception(String.Format("File {0} not found.", e.File.Name))
-
-        Using sr As New StreamReader(e.File.FullName)
-            ret = JsonConvert.DeserializeObject(sr.ReadToEnd, e.serialType)
-
-        End Using
-
-    End Sub
 
 #End Region
 
@@ -329,129 +250,143 @@ Public Class clArg
 
 #Region "Logging"
 
-    Public Function DatedFolder(root As DirectoryInfo) As DirectoryInfo
-        Dim ret As DirectoryInfo
-        With root
-            If Not .Exists Then .Create()
-            ret = New DirectoryInfo(Path.Combine(.FullName, Now.ToString("yyyy-MM")))
-            With ret
-                If Not .Exists Then .Create()
-                Return ret
-            End With
-        End With
-
-    End Function
-
-    Private Function LogFolder() As DirectoryInfo
-        Return New DirectoryInfo(
-            Path.Combine(
-               Directory.GetCurrentDirectory,
-                String.Format(
-                    "log\{0}",
-                    Now.ToString("yyyy-MM")
-                )
-            )
-        )
-
-    End Function
-
-    Private Function currentlog() As FileInfo
-        With LogFolder()
-            If Not .Exists Then .Create()
-            Return New FileInfo(
-                Path.Combine(
-                    .FullName,
-                    String.Format(
-                        "{0}.txt",
-                        Now.ToString("yyMMdd")
-                    )
-                )
-            )
-
-        End With
-
-    End Function
-
-    Public Sub Log(ByVal str, ByVal ParamArray args())
-        Using log As New StreamWriter(currentlog.FullName, True)
-            log.WriteLine("{0}> {1}", Format(Now, "HH:mm:ss"), String.Format(str, args))
-        End Using
+    Public Sub Log(ByVal str As String, ByVal ParamArray arg() As String)
+        Me.logHandler.Invoke(Me, New LogArgs(str, arg))
 
     End Sub
 
     Public Sub Log(ByVal str)
-        Using log As New StreamWriter(currentlog.FullName, True)
-            log.WriteLine("{0}> {1}", Format(Now, "HH:mm:ss"), str)
-        End Using
-
-    End Sub
-#End Region
-
-#Region "SMTP Notify Errors"
-
-    Public Sub errNotify(Subject As String, fn As FileInfo, ex As Exception)
-        Attempt(AddressOf Notify, New notifyArgs(Subject, fn, ex), "Sending error report")
-
-    End Sub
-
-    Private Sub Notify(sender As Object, e As notifyArgs)
-
-        If Not e.fn.Exists Then Throw New Exception(String.Format("Config file {0} not found.", e.fn.FullName))
-
-        Dim doc As New XmlDocument
-        Try
-            doc.Load(e.fn.FullName)
-
-        Catch ex As Exception
-            Throw New Exception(String.Format("Load {0} failed. {1}", e.fn.FullName, ex.Message))
-
-        End Try
-
-        Dim node As XmlNode = doc.SelectSingleNode("//notifyerror")
-        If node Is Nothing Then Throw New Exception(String.Format("No notifyerror node in {0}.", e.fn.FullName))
-
-        Dim add As New List(Of String)
-        For Each email As XmlNode In node.SelectNodes("notify")
-            add.Add(email.Attributes("address").Value)
-        Next
-
-        If add.Count = 0 Then Throw New Exception(String.Format("No email address in {0}.", e.fn.FullName))
-
-        Dim erMail = New MailMessage(node.Attributes("from").Value, add(0))
-        With erMail
-            With .CC
-                For i As Integer = 1 To add.Count - 1
-                    .Add(add(i))
-                Next
-            End With
-
-            .Subject = e.Subject
-            .Body = Now.ToString & vbCrLf & e.ex.Message & vbCrLf & vbCrLf & e.ex.StackTrace
-
-            If node.Attributes("smtp") Is Nothing Then Throw New Exception(String.Format("No SMTP set in {0}.", e.fn.FullName))
-            Using c As New SmtpClient(node.Attributes("smtp").Value)
-                c.Send(erMail)
-
-            End Using
-
-        End With
+        Me.logHandler.Invoke(Me, New LogArgs(str, Nothing))
 
     End Sub
 
 #End Region
 
+    '#Region "Logging"
+
+    '    Public Function DatedFolder(root As DirectoryInfo) As DirectoryInfo
+    '        Dim ret As DirectoryInfo
+    '        With root
+    '            If Not .Exists Then .Create()
+    '            ret = New DirectoryInfo(Path.Combine(.FullName, Now.ToString("yyyy-MM")))
+    '            With ret
+    '                If Not .Exists Then .Create()
+    '                Return ret
+    '            End With
+    '        End With
+
+    '    End Function
+
+    '    Private Function LogFolder() As DirectoryInfo
+    '        Return New DirectoryInfo(
+    '            Path.Combine(
+    '               Directory.GetCurrentDirectory,
+    '                String.Format(
+    '                    "log\{0}",
+    '                    Now.ToString("yyyy-MM")
+    '                )
+    '            )
+    '        )
+
+    '    End Function
+
+    '    Private Function currentlog() As FileInfo
+    '        With LogFolder()
+    '            If Not .Exists Then .Create()
+    '            Return New FileInfo(
+    '                Path.Combine(
+    '                    .FullName,
+    '                    String.Format(
+    '                        "{0}.txt",
+    '                        Now.ToString("yyMMdd")
+    '                    )
+    '                )
+    '            )
+
+    '        End With
+
+    '    End Function
+
+    '    Public Sub Log(ByVal str, ByVal ParamArray args())
+    '        Using log As New StreamWriter(currentlog.FullName, True)
+    '            log.WriteLine("{0}> {1}", Format(Now, "HH:mm:ss"), String.Format(str, args))
+    '        End Using
+
+    '    End Sub
+
+    '    Public Sub Log(ByVal str)
+    '        Using log As New StreamWriter(currentlog.FullName, True)
+    '            log.WriteLine("{0}> {1}", Format(Now, "HH:mm:ss"), str)
+    '        End Using
+
+    '    End Sub
+    '#End Region
+
+    '#Region "SMTP Notify Errors"
+
+    '    Public Sub errNotify(Subject As String, fn As FileInfo, ex As Exception)
+    '        'Attempt(AddressOf Notify, New notifyArgs(Subject, fn, ex), "Sending error report")
+
+    '    End Sub
+
+    '    Private Sub Notify(sender As Object, e As notifyArgs)
+
+    '        If Not e.fn.Exists Then Throw New Exception(String.Format("Config file {0} not found.", e.fn.FullName))
+
+    '        Dim doc As New XmlDocument
+    '        Try
+    '            doc.Load(e.fn.FullName)
+
+    '        Catch ex As Exception
+    '            Throw New Exception(String.Format("Load {0} failed. {1}", e.fn.FullName, ex.Message))
+
+    '        End Try
+
+    '        Dim node As XmlNode = doc.SelectSingleNode("//notifyerror")
+    '        If node Is Nothing Then Throw New Exception(String.Format("No notifyerror node in {0}.", e.fn.FullName))
+
+    '        Dim add As New List(Of String)
+    '        For Each email As XmlNode In node.SelectNodes("notify")
+    '            add.Add(email.Attributes("address").Value)
+    '        Next
+
+    '        If add.Count = 0 Then Throw New Exception(String.Format("No email address in {0}.", e.fn.FullName))
+
+    '        Dim erMail = New MailMessage(node.Attributes("from").Value, add(0))
+    '        With erMail
+    '            With .CC
+    '                For i As Integer = 1 To add.Count - 1
+    '                    .Add(add(i))
+    '                Next
+    '            End With
+
+    '            .Subject = e.Subject
+    '            .Body = Now.ToString & vbCrLf & e.ex.Message & vbCrLf & vbCrLf & e.ex.StackTrace
+
+    '            If node.Attributes("smtp") Is Nothing Then Throw New Exception(String.Format("No SMTP set in {0}.", e.fn.FullName))
+    '            Using c As New SmtpClient(node.Attributes("smtp").Value)
+    '                c.Send(erMail)
+
+    '            End Using
+
+    '        End With
+
+    '    End Sub
+
+    '#End Region
+
 End Class
 
-Public Class notifyArgs : Inherits EventArgs
-    Public fn As FileInfo
-    Public ex As Exception
-    Public Subject As String
+'Public Class notifyArgs : Inherits EventArgs
+'    Public fn As FileInfo
+'    Public ex As Exception
+'    Public Subject As String
 
-    Sub New(SubjectStr As String, file As FileInfo, exep As Exception)
-        Subject = SubjectStr
-        fn = file
-        ex = exep
+'    Sub New(SubjectStr As String, file As FileInfo, exep As Exception)
+'        Subject = SubjectStr
+'        fn = file
+'        ex = exep
 
-    End Sub
+'    End Sub
 
-End Class
+'End Class

@@ -13,7 +13,10 @@ Public Class clArg
 
     Sub New(Optional LogEventHandler As EventHandler = Nothing)
 
-        If Not LogEventHandler Is Nothing Then Me.logHandler = LogEventHandler
+        If Not LogEventHandler Is Nothing Then
+            MedatechUK.Logging.Events.LogLocation = eLogLocation.CurrentyWorkingDirectory
+            Me.logHandler = LogEventHandler
+        End If
 
         Dim Args = Environment.GetCommandLineArgs()
         Console.WriteLine("")
